@@ -1,0 +1,241 @@
+<!doctype html>
+<html>
+	<head>
+	<meta charset="UTF-8">
+	<title>Bee Catcher level 01</title>
+	<style>
+@import url('https://fonts.googleapis.com/css?family=VT323');
+body {
+	background: white;
+}
+h1 {
+	margin-left: 12%;
+	font-family: 'VT323', monospace;
+	color: #FAB526;
+	margin: 0, auto;
+	width: 100%;
+}
+h2 {
+	margin-left: 30%;
+	font-family: 'VT323', monospace;
+	color:  #FAB526;
+	margin: 0, auto;
+	width: 100%;
+}
+		
+		p {
+	margin-left: 22%;
+	font-family: 'VT323', monospace;
+	color:  #FAB526;
+	margin: 0, auto;
+	width: 100%;
+		}
+</style>
+	<script type="text/javascript" src="js/phaser2.10.3.min.js"></script>
+	<script type="text/javascript" src="Boot.js"></script>
+	<script type="text/javascript" src="Preloader.js"></script>
+	<script type="text/javascript" src="StartMenu.js"></script>
+	
+
+	<script>
+
+window.onload = function() {
+	var game = new Phaser.Game(800, 600, Phaser.AUTO, 'test', null, false, false);
+	game.state.add('Boot', MyCatcherGame.Boot);
+	game.state.add('Preloader', MyCatcherGame.Preloader);
+	game.state.add('StartMenu', MyCatcherGame.StartMenu);
+	game.state.start('Boot');
+
+}
+		
+var BasicGame = function (game) {};
+BasicGame.Boot = function (game) {};
+var timer, timerEvent, text;
+var countDown = 15;
+var cursors, bee, catcher, score, scoreTXT, music, catsound;
+BasicGame.Boot.prototype = {
+    preload: function () {
+		
+		//images
+		game.load.image('bg', 'images/bg-forest.png');
+		game.load.image('catcher', 'images/bear.png');
+		game.load.image('bee', 'images/bee.png');
+		
+		
+		//music
+   		game.load.audio('bee','sounds/bee.mp3');
+		game.load.audio('background','sounds/honey-bear-loop.mp3');
+
+    
+        
+    },
+    create: function () {
+		
+		//Create BG
+		game.add.sprite(0,0, 'bg');
+		
+		//Create Catcher
+		catcher=game.add.sprite(game.width / 2 , 350, 'catcher');
+		catcher.anchor.setTo(0.5, 0.5);
+		
+		//Create Bee
+		bee=game.add.sprite(game.width * Math.random(), game.height * Math.random(),'bee');
+		bee.anchor.setTo(0.5, 0.5);
+	
+		
+		game.physics.enable(catcher, Phaser.Physics.ARCADE);
+		game.physics.enable(bee, Phaser.Physics.ARCADE);
+		
+		cursors = game.input.keyboard.createCursorKeys();
+		
+		//create SCORE
+		score = 0;
+		scoreTXT = game.add.text(10, 10, score.toString(), { font: "30px 'VT323'", fill: "#FAB526"});
+		
+		
+		//add sound & music
+		music = game.add.audio('background');
+		music.play();
+		
+		beesound= game.add.audio('bee');
+		
+		
+		
+			// Create a custom timer
+        timer = game.time.create();
+        
+        // Create a delayed event 1m and 30s from now
+        timerEvent = timer.add(Phaser.Timer.SECOND * countDown, this.endTimer, this);
+        
+        // Start the timer
+        timer.start();
+      
+        text = game.add.text(750, 30, this.formatTime(Math.round((timerEvent.delay - timer.ms) / 1000)), 
+        { font: "30px 'VT323'", fill: "#ff0044" });
+      
+        text.anchor.set(0.5);
+      
+        
+      
+        this.scoreLabelTween = game.add.tween(text.scale).to({ x: 1.2, y: 1.2}, 2000, Phaser.Easing.Linear.In);
+ 
+		
+    },
+	
+	
+    update: function () {
+		
+		
+		
+		var tmp = this.formatTime(Math.round((timerEvent.delay - timer.ms) / 1000));
+ 
+        if (timer.running && tmp >= 1) {
+          text.text = this.formatTime(Math.round((timerEvent.delay - timer.ms) / 1000));
+          this.scoreLabelTween.start();
+        }
+		
+		//runs the game loop
+		//if left arrow is pressed
+		if(cursors.left.isDown && catcher.x>10){
+			catcher.x -= 5;
+			//scaling 100% pointing in the orginal directiosn
+			catcher.scale.x = 1;
+			
+		}
+		
+		if(cursors.right.isDown && catcher.x<game.width-10){
+			catcher.x += 5;
+			catcher.scale.x = -1;
+			
+		}
+		
+		if(cursors.up.isDown && catcher.y>10){
+			catcher.y -= 5;
+			
+		}
+		
+		if(cursors.down.isDown && catcher.y<game.height-10){
+			catcher.y += 5;
+			}
+		
+		
+		//arguments: objects, callback function
+		
+		game.physics.arcade.overlap(catcher, bee, catHitHandler);
+        
+    },
+	
+	
+    render: function () {
+        // If our timer is running, show the time in a nicely formatted way, else show 'Done!'
+        if (!timer.running && score != 10) {
+			loseText = game.add.text(game.world.centerX, game.world.centerY, "- YOU LOST BEE FIGHT -\nclick to play again", { font: "30px 'VT323'", fill: '#FAB526', align: "center"  });
+    		loseText.anchor.setTo(0.5, 0.5);
+			game.input.onDown.addOnce(youLose, this);
+			bee.destroy();
+			catcher.destroy();
+			text.kill();
+        }
+    },
+	
+	
+    endTimer: function() {
+       // Stop the timer when the delayed event triggers
+        timer.stop();
+    },
+	
+	
+	
+    formatTime: function(s) {
+		// Convert seconds (s) to a nicely formatted and padded time string
+        var minutes = "0" + Math.floor(s / 60);
+        var seconds = "" + (s - minutes * 60);
+        return seconds.substr(-2);     
+    }
+};
+		
+function catHitHandler(){
+		beesound.play();
+		bee.x = game.width * Math.random();
+		bee.y = game.height * Math.random();
+		score++;
+		scoreTXT.setText(score.toString());
+	
+			if (score == 10) {
+  			
+				
+			winText = game.add.text(game.world.centerX, game.world.centerY, "- YOU WON HONEY! -\nclick to play again", { font: "30px 'VT323'", fill: '#FAB526', align: "center"  });
+    		winText.anchor.setTo(0.5, 0.5);
+			game.input.onDown.addOnce(youWin, this);
+			text.kill();
+			bee.destroy();
+			catcher.destroy();
+			
+			} 
+	}
+		
+	
+	
+	function youLose() {
+    loseText.destroy();
+	game.state.start('Boot');	
+	}	
+		
+		
+	function youWin() {
+    winText.destroy();
+	game.state.start('Boot');	
+	}
+	
+		
+game.state.add('Boot', BasicGame.Boot);
+game.state.start('Boot');
+	</script>
+	</head>
+
+	<body>
+<!--<h1>BEE CATCHER - WELCOME TO LEVEL 01</h1>
+	<p>You need to catch 5 bees in 15 seconds</p>-->
+		
+</body>
+</html>
