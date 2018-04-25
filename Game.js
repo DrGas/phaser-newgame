@@ -121,7 +121,7 @@ MyCatcherGame.Game.prototype = {
 	}, 
 	
 	render:function(){
-		if (!timer.running && score != 3) {
+		if (!timer.running && score != 10) {
 			loseText = this.add.text(this.world.centerX, this.world.centerY, "- YOU LOST BEE FIGHT -\nclick to play again", { font: "30px 'eightbitwonder'", fill: '#FAB526', align: "center"  });
     		loseText.anchor.setTo(0.5, 0.5);
 			this.input.onDown.addOnce(restart, this);
@@ -153,7 +153,7 @@ function beeHitHandler(){
 		score++;
 		scoreTXT.setText(score.toString());
 	
-			if (score == 3) {
+			if (score == 10) {
   				
 			winText = this.add.text(this.world.centerX, this.world.centerY, "- YOU WON HONEY! -\nclick to get to second level!", { font: "30px 'eightbitwonder'", fill: '#FAB526', align: "center"  });
 			this.input.onDown.addOnce(nextLevel, this);
